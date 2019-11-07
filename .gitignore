@@ -10,3 +10,6 @@ data/
 .local/
 .ssh/
 .viminfo
+.gitconfig
+.joe_state
+coco/
