@@ -1,21 +1,33 @@
 import numpy as np
 import torch
 import torchvision
-import torchvision.transforms as transforms
+#import torchvision.transforms as transforms
+
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
 
 from torch.autograd import Variable
 import torch.nn.functional as F
+
+'''
+TODO:
+    - evaluation metrics: https://pytorch.org/blog/torchvision03/
+        - mIoU
+        - mAP
+    - structure
+'''
 
 
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
         
-        c_in1 = 3
-        c_out1 = c_in2 = 10 
-        c_out2 = 15
-        k_size = 3
-        fc_in1 = k_size**2 * c_out2
+        c_in1 = 1
+        c_out1 = c_in2 = 20 
+        c_out2 = 50
+        k_size = 5
+        fc_in1 = 4*4*c_out2 #k_size**2 * c_out2
         fc_in2 = fc_out1 = 500
         fc_out2 = 10
     
@@ -24,6 +36,7 @@ class CNN(nn.Module):
         self.fc1 = nn.Linear(fc_in1, fc_out1)
         self.fc2 = nn.Linear(fc_in2, fc_out2)
 
+        
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2, 2)
