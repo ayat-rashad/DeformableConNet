@@ -2,20 +2,20 @@ from __future__ import print_function
 import argparse
 
 from cnn import *
+import os
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-import torchvision.transforms as transforms
 from torchvision import datasets, transforms
 
+from torch.utils.data import Dataset
+from datasets.loadDataset import load_dataset
 
 from torch.autograd import Variable
 import torch.nn.functional as F
-
-
 
 def main():
     # Training settings
@@ -50,34 +50,40 @@ def main():
     
     ''' 
         Get the data
-        Replace with load_data function
+        Replace with load_dataset function
     '''
     
-    # train_loader, test_loader = load_data(dataset= ....)
+    transform = transforms.Compose([#transforms.Resize((256,256)),
+                                    transforms.ToTensor()
+                                    #,transforms.Normalize((0.1307,), (0.3081,))
+                                   ])
     
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
+    # TODO: replace train_data and test_data with load_dataset(...)
+    #train_data = datasets.MNIST(root='/home/space/datasets/',
+    #                            train=True,
+    #                            download=True,
+    #                            transform=transform)
+    #test_data = datasets.MNIST(root='/home/space/datasets/',
+    #                            train=False,
+    #                            download=True,
+    #                            transform=transform)
     
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.test_batch_size, shuffle=True, **kwargs)
+    train_data, val_data = train_data, val_data = load_dataset('voc2007', transform=transform, type='detection')
+    #train_data, val_data = train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
+    
+    # For Segmentation
+    #train_data, val_data = train_data, val_data = load_dataset('voc2007', transform=transform, type='segmentation')
 
-    
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, **kwargs)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=True, **kwargs)
+
     model = CNN().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     # Start training
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader)
+        test(args, model, device, val_loader)
 
     if args.save_model:
         model_name = "model.pt" 
