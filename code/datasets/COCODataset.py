@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+from __future__ import print_function
 import os
 import cv2
 import numpy as np
@@ -35,19 +35,19 @@ class COCODetection(Dataset):
         self.dataset_dir = self.root_dir+image_set+'2017'
         self.transform = transform
         
-        classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
-               'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-               'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep',
-               'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-               'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard',
-               'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard',
-               'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork',
-               'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
-               'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-               'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
-               'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
-               'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-               'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+        classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 
+                   'truck', 'boat', 'traffic light', 'fire hydrant', 'street sign', 'stop sign', 
+                   'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 
+                   'elephant', 'bear', 'zebra', 'giraffe', 'hat', 'backpack', 'umbrella', 
+                   'shoe', 'eye glasses', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 
+                   'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 
+                   'skateboard', 'surfboard', 'tennis racket', 'bottle', 'plate', 'wine glass', 
+                   'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 
+                   'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 
+                   'potted plant', 'bed', 'mirror', 'dining table', 'window', 'desk', 'toilet', 
+                   'door', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 
+                   'oven', 'toaster', 'sink', 'refrigerator', 'blender', 'book', 'clock', 
+                   'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'hair brush']
         self.classes = classes
         
         self.images, self.labels = self.load_json()
@@ -71,10 +71,6 @@ class COCODetection(Dataset):
         labels = []
         
         coco = self.coco
-        classes = [c['name'] for c in coco.loadCats(coco.getCatIds())]
-        if not classes == self.classes:
-            raise ValueError("Incompatible category names with COCO: ")
-        assert classes == self.classes
         
         img_ids = sorted(coco.getImgIds())
         for entry in coco.loadImgs(img_ids):
@@ -103,7 +99,7 @@ class COCODetection(Dataset):
         
         label = []
         for obj in objs:
-            cls_id = obj['category_id']
+            cls_id = obj['category_id']-1
             bbox = obj['bbox']
             xmin = bbox[0]
             ymin = bbox[1]
@@ -140,19 +136,19 @@ class COCOSegmentation(Dataset):
         self.dataset_dir = self.root_dir+image_set+'2017'
         self.transform = transform
         
-        classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
-               'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-               'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep',
-               'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-               'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard',
-               'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard',
-               'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork',
-               'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange',
-               'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-               'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
-               'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
-               'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-               'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+        classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 
+                   'truck', 'boat', 'traffic light', 'fire hydrant', 'street sign', 'stop sign', 
+                   'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 
+                   'elephant', 'bear', 'zebra', 'giraffe', 'hat', 'backpack', 'umbrella', 
+                   'shoe', 'eye glasses', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 
+                   'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 
+                   'skateboard', 'surfboard', 'tennis racket', 'bottle', 'plate', 'wine glass', 
+                   'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 
+                   'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 
+                   'potted plant', 'bed', 'mirror', 'dining table', 'window', 'desk', 'toilet', 
+                   'door', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 
+                   'oven', 'toaster', 'sink', 'refrigerator', 'blender', 'book', 'clock', 
+                   'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'hair brush']
         self.classes = classes
         
         self.images, self.labels, self.segms = self.load_json()
@@ -178,10 +174,6 @@ class COCOSegmentation(Dataset):
         segms = []
         
         coco = self.coco
-        classes = [c['name'] for c in coco.loadCats(coco.getCatIds())]
-        if not classes == self.classes:
-            raise ValueError("Incompatible category names with COCO: ")
-        assert classes == self.classes
         
         img_ids = sorted(coco.getImgIds())
         for entry in coco.loadImgs(img_ids):
@@ -218,7 +210,7 @@ class COCOSegmentation(Dataset):
             if obj.get('iscrowd', 0) == 1:
                 continue
                 
-            cls_id = obj['category_id']
+            cls_id = obj['category_id']-1
             bbox = obj['bbox']
             xmin = bbox[0]
             ymin = bbox[1]
