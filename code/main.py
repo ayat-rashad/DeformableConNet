@@ -68,11 +68,12 @@ def main():
     #                            download=True,
     #                            transform=transform)
     
-    train_data, val_data = train_data, val_data = load_dataset('voc2007', transform=transform, type='detection')
-    #train_data, val_data = train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
-    
+    train_data, val_data = load_dataset('voc2007', transform=transform, type='detection')
+    #train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
+    #train_data, val_data = load_dataset('coco', transform=transform, type='detection')
+
     # For Segmentation
-    #train_data, val_data = train_data, val_data = load_dataset('voc2007', transform=transform, type='segmentation')
+    #train_data, val_data = load_dataset('voc2007', transform=transform, type='segmentation')
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, **kwargs)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=True, **kwargs)
