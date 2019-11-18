@@ -70,4 +70,16 @@ def showBbox(image, label, outfile=None, class_names=None):
     if outfile != None: 
         ax.savefig(outfile)
         
-    return ax   
+    return ax 
+
+def show_image_batch(img_list, outfile = None):
+    num = len(img_list)
+    fig = plt.figure()
+    for i in range(num):
+        ax = fig.add_subplot(1, num, i+1)
+        ax.imshow(img_list[i].numpy().transpose([1,2,0]))
+        ax.axis('off')       
+    plt.show()
+    
+    if outfile != None: 
+        plt.savefig(outfile)
