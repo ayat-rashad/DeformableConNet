@@ -15,3 +15,4 @@ data/
 .joe_state
 coco/
 .python_history
+*.ipynb
