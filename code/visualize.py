@@ -81,5 +81,8 @@ def show_image_batch(img_list, outfile = None):
         ax.axis('off')       
     plt.show()
     
+    # Make a grid from batch
+    #out = torchvision.utils.make_grid(images)
+    
     if outfile != None: 
         plt.savefig(outfile)

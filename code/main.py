@@ -80,7 +80,7 @@ def main():
                                                batch_size=args.batch_size, 
                                                shuffle=True, 
                                                **kwargs, 
-                                               collate_fn=pad_collate)
+                                               collate_fn=pad_collate)clea
     
     model = CNN().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
