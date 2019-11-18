@@ -13,6 +13,8 @@ from torchvision import datasets, transforms
 
 from torch.utils.data import Dataset
 from datasets.loadDataset import load_dataset
+import visualize as viz
+from collate import pad_collate
 
 from torch.autograd import Variable
 import torch.nn.functional as F
@@ -58,26 +60,28 @@ def main():
                                     #,transforms.Normalize((0.1307,), (0.3081,))
                                    ])
     
-    # TODO: replace train_data and test_data with load_dataset(...)
-    #train_data = datasets.MNIST(root='/home/space/datasets/',
-    #                            train=True,
-    #                            download=True,
-    #                            transform=transform)
-    #test_data = datasets.MNIST(root='/home/space/datasets/',
-    #                            train=False,
-    #                            download=True,
-    #                            transform=transform)
-    
     train_data, val_data = load_dataset('voc2007', transform=transform, type='detection')
     #train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
     #train_data, val_data = load_dataset('coco', transform=transform, type='detection')
 
     # For Segmentation
     #train_data, val_data = load_dataset('voc2007', transform=transform, type='segmentation')
+    
+    # Example to output example image
+    #img, label = train_data[0]
+    #showBbox(img, label, outfile='/home/pml_09/output/example_001.png', class_names=train_data.classes)
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, **kwargs)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=True, **kwargs)
-
+    train_loader = torch.utils.data.DataLoader(train_data, 
+                                               batch_size=args.batch_size, 
+                                               shuffle=True, 
+                                               **kwargs, 
+                                               collate_fn=pad_collate)
+    val_loader = torch.utils.data.DataLoader(val_data, 
+                                               batch_size=args.batch_size, 
+                                               shuffle=True, 
+                                               **kwargs, 
+                                               collate_fn=pad_collate)
+    
     model = CNN().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
