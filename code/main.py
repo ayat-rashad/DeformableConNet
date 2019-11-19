@@ -1,7 +1,8 @@
 from __future__ import print_function
 import argparse
 
-from cnn import *
+#from cnn import *
+from seg import *
 
 import numpy as np
 import torch
@@ -9,15 +10,13 @@ import torchvision
 import torchvision.transforms as transforms
 from torchvision import datasets, transforms
 
-
 from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-
 def main():
     # Training settings
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser = argparse.ArgumentParser(description='PyTorch')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -38,6 +37,7 @@ def main():
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
     args = parser.parse_args()
+    
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
@@ -53,23 +53,44 @@ def main():
     
     # train_loader, test_loader = load_data(dataset= ....)
     
+    transformations = transforms.Compose([
+    #transforms.Resize(255),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        #(0.1307,), (0.3081,))
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    )
+    ])
+    
+    shuffle = False
+    task = 'segmentation'
+    
+    dataset_train = datasets.VOCSegmentation('../data', year='2008', image_set="train", download=True,
+                       transforms=transformations)
+    dataset_test = datasets.VOCSegmentation('../data', year='2008', image_set="val", download=True,
+                       transforms=transformations)
+    
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
+        dataset_train,
+        batch_size=args.batch_size,
+        shuffle=shuffle,
+        num_workers=4,
+        **kwargs)
     
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.test_batch_size, shuffle=True, **kwargs)
+        dataset_test,
+        batch_size=args.test_batch_size,
+        num_workers=4,
+        shuffle=shuffle, **kwargs)
 
-    
-    model = CNN().to(device)
+    if task == 'segmentation':
+        model = get_cnn_seg().to(device)
+    else:
+        model = CNN().to(device)
+        
+    # model = nn.DataParallel(model)
+        
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     # Start training
