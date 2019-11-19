@@ -24,7 +24,7 @@ class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
         
-        c_in1 = 1
+        c_in1 = 3
         c_out1 = c_in2 = 20 
         c_out2 = 50
         k_size = 5

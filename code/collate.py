@@ -28,6 +28,25 @@ def pad_tensor(image, pad):
 
     return image
 
+def pad_array(arr, pad):
+    '''
+    Pad a label with 0s
+
+    Args:
+        arr - Label array to pad
+        pad - Padding size
+
+    Return:
+        arr - Padded label array
+    '''
+    pad_size = list(arr.shape)
+    
+    if(pad_size[0] != pad):
+        pad_size[0] = pad - arr.shape[0]
+        arr = np.concatenate((arr, np.zeros((pad_size[0], pad_size[1]))))
+        
+    return arr
+
 def pad_collate(batch):
     '''
     Pad images in batch correspond to the maximum dim in the batch
@@ -41,15 +60,16 @@ def pad_collate(batch):
     '''
     # Find longest sequence
     max_len = max(map(lambda b: max(b[0].shape), batch))
+    max_lbl = max(map(lambda b: b[1].shape[0], batch))
 
     # pad according to max_len
     padded_batch = []
     for b in batch:
-        x, y, z = b[0].shape
         padded_tensor = pad_tensor(b[0], pad=max_len)
-        padded_batch.append((padded_tensor, b[1]))
+        padded_array = pad_array(b[1], pad=max_lbl)
+        padded_batch.append((padded_tensor, padded_array))
 
     # stack all
     images = torch.stack(list(map(lambda x: x[0], padded_batch)), dim=0)
-    label = list(map(lambda x: x[1], padded_batch))
+    label = torch.FloatTensor(list(map(lambda x: x[1], padded_batch)))
     return images, label
