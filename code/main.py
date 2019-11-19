@@ -3,6 +3,7 @@ import argparse
 
 #from cnn import *
 from seg import *
+from util import *
 
 import numpy as np
 import torch
@@ -16,6 +17,8 @@ import torch.nn.functional as F
 
 def main():
     # Training settings
+    task = 'segmentation'
+
     parser = argparse.ArgumentParser(description='PyTorch')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
@@ -44,45 +47,17 @@ def main():
 
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    kwargs =  {}
     
     ''' 
         Get the data
         Replace with load_data function
     '''
     
-    # train_loader, test_loader = load_data(dataset= ....)
+    train_loader, test_loader = get_voc_data()
     
-    transformations = transforms.Compose([
-    #transforms.Resize(255),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        #(0.1307,), (0.3081,))
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
-    ])
     
-    shuffle = False
-    task = 'segmentation'
-    
-    dataset_train = datasets.VOCSegmentation('../data', year='2008', image_set="train", download=True,
-                       transforms=transformations)
-    dataset_test = datasets.VOCSegmentation('../data', year='2008', image_set="val", download=True,
-                       transforms=transformations)
-    
-    train_loader = torch.utils.data.DataLoader(
-        dataset_train,
-        batch_size=args.batch_size,
-        shuffle=shuffle,
-        num_workers=4,
-        **kwargs)
-    
-    test_loader = torch.utils.data.DataLoader(
-        dataset_test,
-        batch_size=args.test_batch_size,
-        num_workers=4,
-        shuffle=shuffle, **kwargs)
 
     if task == 'segmentation':
         model = get_cnn_seg().to(device)

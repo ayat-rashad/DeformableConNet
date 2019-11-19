@@ -11,7 +11,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-def get_cnn_seg():        
+def get_cnn_seg(n_classes=20):        
         # Get pretrained ResNet model 
         model = models.resnet101(pretrained=True)  # backbone
      
