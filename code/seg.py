@@ -11,7 +11,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-def get_cnn_seg(n_classes=20):        
+
+def get_cnn_seg(n_classes=21):        
         # Get pretrained ResNet model 
         model = models.resnet101(pretrained=True)  # backbone
      
@@ -27,18 +28,43 @@ def get_cnn_seg(n_classes=20):
         classifier_input = model.fc.in_features
         
         # Build a new classifier
-        classifier = nn.Sequential(nn.Linear(classifier_input, n_classes),
+        '''classifier = nn.Sequential(nn.Linear(classifier_input, n_classes),
                                    #nn.ReLU(),
                                    #nn.Linear(1024, n_classes),
                                    #nn.ReLU(),
                                    #nn.Linear(512, n_classes),
                                    nn.LogSoftmax(dim=1)
-                                  )
+                                  )'''
+        
         # Replace default classifier with new classifier
         # model.classifier = classifier
-        model.fc = classifier
+        #model.fc = classifier
+        
+        head = nn.Sequential(nn.Conv2d(2048, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+                             #nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+                             nn.ReLU(),
+                             #Dropout(p=0.1, inplace=False),
+                             nn.Conv2d(512, n_classes, kernel_size=(1, 1), stride=(1, 1))
+                                  )
+        
+        #model.avgpool = nn.Identity()
+        model.fc = head
         
         return model
+    
+    
+def get_seg_model(n_classes=21, model_name='deeplab'):        
+    # Get pretrained ResNet model 
+    if model_name == 'deeplab':
+        model = models.segmentation.deeplabv3_resnet101(pretrained=False)
+
+    # Turn off training for their parameters
+    #for param in model.parameters():
+    #    param.requires_grad = False
+    
+    return model
+            
+
         
                 
         
