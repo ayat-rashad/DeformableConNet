@@ -37,6 +37,9 @@ def showBbox(image, label, outfile=None, class_names=None):
     Return:
         ax (Matplotlib Axes)
     '''
+    if isinstance(label, torch.Tensor):
+        label = label.numpy()[0, :, :]
+        
     bboxes = label[:, :4]
     class_ids = label[:, 4:5]
     ax = show(image)
