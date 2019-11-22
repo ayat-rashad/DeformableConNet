@@ -20,15 +20,17 @@ class VOCDetection(Dataset):
         root      (string)             : Root directory of VOC Dataset
         year      (string)             : Dataset year, only supports 2007 and 2012
         image_set (string)             : Select image_set to use, ['train', 'val', 'trainval', 'test']
-        transform (callable, optional) : A function/transform that takes in an PIL image
+        transform (callable, optional) : A function/transform that takes in an input
+            and returns a transformed version. E.g, ``transforms.ToTensor()``
+        target_transform (callable, optional) : A function/transform that takes in an output
             and returns a transformed version. E.g, ``transforms.ToTensor()``
     
     Return:
         An array of (image, label) pair.
-        image (PIL image) : Dataset image
-        label (string)    : Annotation informations (xmin, ymin, xmax, ymax, cls_id, difficult)
+        image (PIL image/ transfomed) : Dataset image
+        label (string / transfomed)    : Annotation informations (xmin, ymin, xmax, ymax, cls_id, difficult)
     '''
-    def __init__(self, root, year, image_set, transform=None):
+    def __init__(self, root, year, image_set, transform=None, target_transform=None):
         
         if year not in ['2007', '2012']:
             raise RuntimeError('Currently only support 2007 and 2012.')
@@ -39,6 +41,7 @@ class VOCDetection(Dataset):
         self.root_dir = root
         self.dataset_dir = os.path.join(self.root_dir, 'VOC'+year)
         self.transform = transform
+        self.target_transform = target_transform
         
         classes = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                    'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
@@ -70,8 +73,8 @@ class VOCDetection(Dataset):
     def __getitem__(self, idx):
         img_id = str(self.name_list[idx]).rjust(6, '0') if '2007' == self.year else str(self.name_list[idx])
         img_file = self.img_dir + '/' + img_id + '.jpg'
-        image = cv2.imread(img_file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        image = Image.open(img_file).convert('RGB')
         
         ann_file = self.ann_dir + '/' + img_id + '.xml'
 
@@ -79,6 +82,9 @@ class VOCDetection(Dataset):
         
         if self.transform is not None:
             image = self.transform(image)
+            
+        if self.target_transform is not None:
+            label = self.target_transform(label)
 
         return image, label
     
@@ -121,13 +127,15 @@ class VOCSegmentation(Dataset):
         image_set (string)             : Select image_set to use, ['train', 'val', 'trainval', 'test']
         transform (callable, optional) : A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor()``
+        target_transform (callable, optional) : A function/transform that takes in an output
+            and returns a transformed version. E.g, ``transforms.ToTensor()``
     
     Return:
         An array of (image, mask) pair.
-        image (PIL image) : Dataset image
-        mask  (PIL image) : Mask image
+        image (PIL image / transfomed) : Dataset image
+        mask  (PIL image / transfomed) : Mask image
     '''
-    def __init__(self, root, year, image_set, transform=None):
+    def __init__(self, root, year, image_set, transform=None, target_transform=None):
         
         if year not in ['2007', '2012']:
             raise RuntimeError('Currently only support 2007 and 2012.')
@@ -138,6 +146,7 @@ class VOCSegmentation(Dataset):
         self.root_dir = root if root else '/home/space/datasets/VOCdevkit/'
         self.dataset_dir = os.path.join(self.root_dir, 'VOC'+year)
         self.transform = transform
+        self.target_transform = target_transform
         
         classes = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                    'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
@@ -171,12 +180,13 @@ class VOCSegmentation(Dataset):
         img_file = self.img_dir + '/' + img_id + '.jpg'
         mask_file = self.seg_dir + '/' + img_id +'.png'
         
-        image = cv2.imread(img_file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
-        mask = cv2.imread(mask_file)
+        image = Image.open(img_file).convert('RGB')
+        mask = Image.open(mask_file)
         
         if self.transform is not None:
             image = self.transform(image)
+            
+        if self.target_transform is not None:
+            mask = self.target_transform(mask)
 
         return image, mask    

@@ -17,13 +17,15 @@ class COCODetection(Dataset):
         image_set (string)             : Select image_set to use, ['train', 'val']
         transform (callable, optional) : A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor()``
+        target_transform (callable, optional) : A function/transform that takes in an output
+            and returns a transformed version. E.g, ``transforms.ToTensor()``
             
     Return:
         An array of (image, label) pair.
         image (PIL image) : Dataset image
         label (string)    : Annotation informations (xmin, ymin, xmax, ymax, cls_id)
     '''
-    def __init__(self, root, image_set, transform=None):
+    def __init__(self, root, image_set, transform=None, target_transform=None):
         if image_set not in ['train', 'val']:
             raise RuntimeError('Image set is not found. It should be train or val.')
         
@@ -34,6 +36,7 @@ class COCODetection(Dataset):
         self.root_dir = root if root else '/home/space/datasets/coco/'
         self.dataset_dir = self.root_dir+image_set+'2017'
         self.transform = transform
+        self.target_transform = target_transform
         
         classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 
                    'truck', 'boat', 'traffic light', 'fire hydrant', 'street sign', 'stop sign', 
@@ -58,13 +61,18 @@ class COCODetection(Dataset):
     def __getitem__(self, idx):
         img_path = self.images[idx]
         label = self.labels[idx]
-        image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        image = Image.open(img_file).convert('RGB')
 
         if self.transform is not None:
             image = self.transform(image)
+            
+        if self.target_transform is not None:
+            label = self.target_transform(label)
+        else:
+            label = np.array(label)
 
-        return image, np.array(label)
+        return image, label
     
     def load_json(self):
         items = []
@@ -160,8 +168,8 @@ class COCOSegmentation(Dataset):
         img_path = self.images[idx]
         label = self.labels[idx]
         segm = self.segms[idx]
-        image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        image = Image.open(img_file).convert('RGB')
 
         if self.transform is not None:
             image = self.transform(image)
