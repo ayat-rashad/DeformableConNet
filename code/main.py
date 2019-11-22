@@ -1,8 +1,10 @@
 from __future__ import print_function
 import argparse
+import os
 
 from cnn import *
-import os
+from seg import *
+from util import *
 
 import numpy as np
 import torch
@@ -21,7 +23,9 @@ import torch.nn.functional as F
 
 def main():
     # Training settings
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    task = 'segmentation'
+
+    parser = argparse.ArgumentParser(description='PyTorch')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -42,19 +46,22 @@ def main():
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
     args = parser.parse_args()
+    
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    kwargs =  {}
     
     ''' 
         Get the data
         Replace with load_dataset function
     '''
     
+<<<<<<< HEAD
     transform = transforms.Compose([#transforms.Resize((256,256)),
                                     transforms.ToTensor()
                                     #,transforms.Normalize((0.1307,), (0.3081,))
@@ -83,6 +90,16 @@ def main():
                                                collate_fn=pad_collate)
     
     model = CNN().to(device)
+    
+    #train_loader, test_loader = get_voc_data()
+
+    if task == 'segmentation':
+        model = get_cnn_seg().to(device)
+    else:
+        model = CNN().to(device)
+        
+    # model = nn.DataParallel(model)
+        
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     # Start training
