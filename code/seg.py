@@ -11,6 +11,15 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
+'''from coco_utils import get_coco, get_coco_kp
+
+from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from engine import train_one_epoch, evaluate
+'''
+
+from util import *
+
+
 
 def get_cnn_seg(n_classes=21):        
         # Get pretrained ResNet model 
@@ -53,10 +62,10 @@ def get_cnn_seg(n_classes=21):
         return model
     
     
-def get_seg_model(n_classes=21, model_name='deeplab'):        
-    # Get pretrained ResNet model 
+def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True):        
+    # Get pretrained deeplab model 
     if model_name == 'deeplab':
-        model = models.segmentation.deeplabv3_resnet101(pretrained=False)
+        model = models.segmentation.deeplabv3_resnet101(pretrained=pretrained)
 
     # Turn off training for their parameters
     #for param in model.parameters():
@@ -65,57 +74,70 @@ def get_seg_model(n_classes=21, model_name='deeplab'):
     return model
             
 
-        
+def criterion(inputs, target, reduction='sum'):
+    losses = {}
+    target = target.squeeze(axis=1).long()
+    for name, x in inputs.items():
+        losses[name] = nn.functional.cross_entropy(x, target, ignore_index=255, reduction=reduction)
+
+    if len(losses) == 1:
+        return losses['out']
+
+    return losses['out'] + 0.5 * losses['aux']
+
                 
         
 def train(args, model, device, train_loader, optimizer, epoch, phase='train', crt=
          'cent'):
-    if phase == 'train':
-        model.train()
-    #else:
-    #    model.eval()
+    model.train()
     
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
+        target = target
         optimizer.zero_grad()
         output = model(data)
         
         #loss = F.nll_loss(output, target)
-        if crt == 'cent':
-            criterion = nn.CrossEntropyLoss()
+        #if crt == 'cent':
+        #    criterion = nn.CrossEntropyLoss()
         loss = criterion(output, target)
         
-        if phase == 'train':
-            loss.backward()
-            optimizer.step()
+        loss.backward()
+        optimizer.step()
         
-        if batch_idx % args.log_interval == 0:
+        '''if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+                100. * batch_idx / len(train_loader), loss.item()))'''
 
 
 def test(args, model, device, test_loader, crt='cent'):
     model.eval()
     test_loss = 0
     correct = 0
+    confmat = ConfusionMatrix(21)
     
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
+            target = target
             output = model(data)
             
-            if crt == 'cent':
-                criterion = nn.CrossEntropyLoss()
+            #if crt == 'cent':
+            #    criterion = nn.CrossEntropyLoss()
             
             test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
+            pred = output['out'].argmax(dim=1, keepdim=True).squeeze()  # get the index of the max log-probability
+            #correct += pred.eq(target.view_as(pred)).sum().item()
+            confmat.update(target.flatten(), pred.flatten())
 
-    test_loss /= len(test_loader.dataset)
+        confmat.reduce_from_all_processes()
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    #test_loss /= len(test_loader.dataset)
+
+    #print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    #    test_loss, correct, len(test_loader.dataset),
+    #    100. * correct / len(test_loader.dataset)))
+    return confmat
     
     
