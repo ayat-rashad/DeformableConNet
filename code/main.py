@@ -2,7 +2,7 @@ from __future__ import print_function
 import argparse
 import os
 
-from cnn import *
+#from cnn import *
 from seg import *
 from util import *
 
@@ -23,7 +23,7 @@ import torch.nn.functional as F
 
 def main():
     # Training settings
-    task = 'segmentation'
+    task = 'segmentation2'
 
     parser = argparse.ArgumentParser(description='PyTorch')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -52,16 +52,12 @@ def main():
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
-
-    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    kwargs =  {}
     
     ''' 
         Get the data
         Replace with load_dataset function
     '''
     
-<<<<<<< HEAD
     transform = transforms.Compose([#transforms.Resize((256,256)),
                                     transforms.ToTensor()
                                     #,transforms.Normalize((0.1307,), (0.3081,))
@@ -89,12 +85,16 @@ def main():
                                                **kwargs, 
                                                collate_fn=pad_collate)
     
-    model = CNN().to(device)
+    #model = CNN().to(device)
     
-    #train_loader, test_loader = get_voc_data()
+    train_loader, test_loader = get_voc_data()
 
     if task == 'segmentation':
         model = get_cnn_seg().to(device)
+        
+    elif task == 'segmentation2':
+        model = get_seg_model().to(device)
+        
     else:
         model = CNN().to(device)
         
@@ -104,8 +104,10 @@ def main():
 
     # Start training
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, val_loader)
+        # uncomment this and set pretrained to False for training
+        #train(args, model, device, train_loader, optimizer, epoch)
+        confmat = test(args, model, device, test_loader)
+        print(confmat)
 
     if args.save_model:
         model_name = "model.pt" 
