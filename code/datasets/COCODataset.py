@@ -62,7 +62,7 @@ class COCODetection(Dataset):
         img_path = self.images[idx]
         label = self.labels[idx]
         
-        image = Image.open(img_file).convert('RGB')
+        image = Image.open(img_path).convert('RGB')
 
         if self.transform is not None:
             image = self.transform(image)
