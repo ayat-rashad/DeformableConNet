@@ -13,6 +13,7 @@ def pad_tensor(image, pad):
         image - Padded image tensor
     '''
     # Tensor [c, h, w] -> dim(0) can be skipped, pad only dim(1) and dim(2)
+    image = image.type(torch.FloatTensor)
     pad_size = list(image.shape)
 
     # Pad dim 1 if it is not equal pad_length
@@ -58,18 +59,22 @@ def pad_collate(batch):
         images - A tensor of all padded images in 'batch'
         label - Label
     '''
-    # Find longest sequence
+    # find longest sequence
     max_len = max(map(lambda b: max(b[0].shape), batch))
-    max_lbl = max(map(lambda b: b[1].shape[0], batch))
-
-    # pad according to max_len
+    max_lbl = max(map(lambda b: max(b[1].shape) if isinstance(b[1], torch.Tensor) else b[1].shape[0], batch))
+    
+    # pad according to max_len and max_lbl
     padded_batch = []
     for b in batch:
         padded_tensor = pad_tensor(b[0], pad=max_len)
-        padded_array = pad_array(b[1], pad=max_lbl)
+        padded_array = pad_tensor(b[1], pad=max_lbl) if isinstance(b[1], torch.Tensor) else pad_array(b[1], pad=max_lbl)
         padded_batch.append((padded_tensor, padded_array))
 
     # stack all
     images = torch.stack(list(map(lambda x: x[0], padded_batch)), dim=0)
-    label = torch.FloatTensor(list(map(lambda x: x[1], padded_batch)))
-    return images, label
+    if isinstance(padded_batch[0][1], torch.Tensor):
+        targets = torch.stack(list(map(lambda x: x[1], padded_batch)), dim=0)
+    else:
+        targets = torch.FloatTensor(list(map(lambda x: x[1], padded_batch)))
+        
+    return images, targets
