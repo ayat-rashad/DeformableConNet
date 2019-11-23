@@ -53,17 +53,21 @@ def main():
 
     device = torch.device("cuda" if use_cuda else "cpu")
     
+    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    kwargs =  {}
+    
     ''' 
         Get the data
         Replace with load_dataset function
     '''
     
-    transform = transforms.Compose([#transforms.Resize((256,256)),
-                                    transforms.ToTensor()
-                                    #,transforms.Normalize((0.1307,), (0.3081,))
-                                   ])
+    transform = transforms.Compose([transforms.ToTensor()])
+    target_transform = transforms.Compose([transforms.ToTensor()])
     
-    train_data, val_data = load_dataset('voc2007', transform=transform, type='detection')
+    train_data, val_data = load_dataset('voc2007', 
+                                        transform=transform, 
+                                        target_transform=target_transform, 
+                                        type='detection')
     #train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
     #train_data, val_data = load_dataset('coco', transform=transform, type='detection')
 
@@ -84,11 +88,11 @@ def main():
                                                shuffle=True, 
                                                **kwargs, 
                                                collate_fn=pad_collate)
-    
+    print('Data is ready')
     #model = CNN().to(device)
     
-    train_loader, test_loader = get_voc_data()
-
+    #train_loader, test_loader = get_voc_data()
+    
     if task == 'segmentation':
         model = get_cnn_seg().to(device)
         
@@ -101,12 +105,13 @@ def main():
     # model = nn.DataParallel(model)
         
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-
+    
     # Start training
+    print('Start eval')
     for epoch in range(1, args.epochs + 1):
         # uncomment this and set pretrained to False for training
         #train(args, model, device, train_loader, optimizer, epoch)
-        confmat = test(args, model, device, test_loader)
+        confmat = test(args, model, device, val_loader)
         print(confmat)
 
     if args.save_model:
