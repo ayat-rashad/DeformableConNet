@@ -13,7 +13,11 @@ def show(image, outfile=None):
     Return:
         ax (Matplotlib Axes)
     '''
-    img = image.permute(1,2,0)
+    if isinstance(image, torch.Tensor):
+        img = image.permute(1,2,0)
+    else:
+        img = image
+        
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.axis('off')
@@ -42,7 +46,14 @@ def showBbox(image, label, outfile=None, class_names=None):
         
     bboxes = label[:, :4]
     class_ids = label[:, 4:5]
-    ax = show(image)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    if isinstance(image, torch.Tensor):
+        image = image.permute(1,2,0)
+    
+    ax.imshow(image)
+    ax.axis('off')
     
     # Get bounding box colors
     cmap = plt.get_cmap('tab20')
