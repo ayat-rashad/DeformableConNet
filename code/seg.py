@@ -62,7 +62,7 @@ def get_cnn_seg(n_classes=21):
         return model
     
     
-def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True):        
+def get_seg_model(n_classes=20, model_name='deeplab', pretrained=True):        
     # Get pretrained deeplab model 
     if model_name == 'deeplab':
         model = models.segmentation.deeplabv3_resnet101(pretrained=pretrained)
@@ -115,7 +115,7 @@ def test(args, model, device, test_loader, crt='cent'):
     model.eval()
     test_loss = 0
     correct = 0
-    confmat = ConfusionMatrix(21)
+    confmat = ConfusionMatrix(20)
     
     with torch.no_grad():
         for data, target in test_loader:

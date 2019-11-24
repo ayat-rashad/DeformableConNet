@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=1, metavar='N',
-                        help='number of epochs to train (default: 10)')
+                        help='number of epochs to train (default: 1)')
     parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                         help='learning rate (default: 0.01)')
     parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
@@ -53,21 +53,35 @@ def main():
 
     device = torch.device("cuda" if use_cuda else "cpu")
     
-    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    kwargs =  {}
+    kwargs = {'num_workers': 4, 'pin_memory': True} if use_cuda else {}
+    #kwargs =  {}
     
     ''' 
         Get the data
         Replace with load_dataset function
     '''
     
-    transform = transforms.Compose([transforms.ToTensor()])
-    target_transform = transforms.Compose([transforms.ToTensor()])
+    transform = transforms.Compose([
+                                    transforms.Resize(255),
+                                    transforms.CenterCrop(224),
+                                    transforms.ToTensor()])
+    
+    def proc_img(img):
+        arr = np.array(img)
+        arr.dtype = np.int8
+        return arr
+    
+    target_transform = transforms.Compose([
+                                            transforms.Resize(255),
+                                            transforms.CenterCrop(224),
+                                            transforms.Lambda(proc_img),
+                                            transforms.ToTensor()])
     
     train_data, val_data = load_dataset('voc2007', 
                                         transform=transform, 
                                         target_transform=target_transform, 
-                                        type='detection')
+                                        type='segmentation')
+    
     #train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
     #train_data, val_data = load_dataset('coco', transform=transform, type='detection')
 
@@ -81,13 +95,11 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_data, 
                                                batch_size=args.batch_size, 
                                                shuffle=True, 
-                                               **kwargs, 
-                                               collate_fn=pad_collate)
+                                               **kwargs)
     val_loader = torch.utils.data.DataLoader(val_data, 
                                                batch_size=args.batch_size, 
                                                shuffle=True, 
-                                               **kwargs, 
-                                               collate_fn=pad_collate)
+                                               **kwargs)
     print('Data is ready')
     #model = CNN().to(device)
     
@@ -97,7 +109,8 @@ def main():
         model = get_cnn_seg().to(device)
         
     elif task == 'segmentation2':
-        model = get_seg_model().to(device)
+        print('Training the model')
+        model = get_seg_model(n_classes=len(train_data.classes), pretrained=True).to(device)
         
     else:
         model = CNN().to(device)
@@ -107,7 +120,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     
     # Start training
-    print('Start eval')
+    print('Start eval with pre-trained model')
     for epoch in range(1, args.epochs + 1):
         # uncomment this and set pretrained to False for training
         #train(args, model, device, train_loader, optimizer, epoch)
