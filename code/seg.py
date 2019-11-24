@@ -78,7 +78,7 @@ def criterion(inputs, target, reduction='sum'):
     losses = {}
     target = target.squeeze(axis=1).long()
     for name, x in inputs.items():
-        losses[name] = nn.functional.cross_entropy(x, target, ignore_index=255, reduction=reduction)
+        losses[name] = nn.functional.cross_entropy(x, target, ignore_index=-1, reduction=reduction)
 
     if len(losses) == 1:
         return losses['out']
@@ -127,7 +127,7 @@ def test(args, model, device, test_loader, crt='cent'):
             #    criterion = nn.CrossEntropyLoss()
             
             test_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
-            pred = output['out'].argmax(dim=1, keepdim=True).squeeze()  # get the index of the max log-probability
+            pred = output['out'].argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             #correct += pred.eq(target.view_as(pred)).sum().item()
             confmat.update(target.flatten(), pred.flatten())
 

@@ -8,33 +8,45 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-def get_voc_data(dataset='seg', test_batch_size=1):
-    batch_size = 64
+def get_voc_data(dataset='seg', batch_size = 64, test_batch_size=1, year='2008', root='../data/VOCdevkit', download=False):
     shuffle = False
-    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     kwargs =  {}
     
     transformations = transforms.Compose([
-    #transforms.Resize(255),
+    transforms.Resize(255),
     transforms.CenterCrop(224),
     transforms.ToTensor(),
-    transforms.Normalize(
-        #(0.1307,), (0.3081,))
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    #    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    #)
     ])
+    
+    def proc_img(img):
+        arr = np.array(img)
+        arr.dtype = np.int8
+        return arr
     
     trgt_transformations = transforms.Compose([
-    #transforms.Resize(255),
+    transforms.Resize(255),
     transforms.CenterCrop(224),
-    transforms.ToTensor(),
+    transforms.Lambda(proc_img),
+    transforms.ToTensor()
     ])
     
-    dataset_train = datasets.VOCSegmentation('../data', year='2008', image_set="train", download=True,
-                       transform=transformations, target_transform=trgt_transformations)
-    dataset_test = datasets.VOCSegmentation('../data', year='2008', image_set="val", download=True,
-                       transform=transformations, target_transform=trgt_transformations)
+    dataset_train = None
+    dataset_test = None
     
+    if dataset == 'seg':
+        dataset_train = datasets.VOCSegmentation(root, year=year, image_set="train", download=download,
+                           transform=transformations, target_transform=trgt_transformations)
+        dataset_test = datasets.VOCSegmentation(root, year=year, image_set="val", download=download,
+                           transform=transformations, target_transform=trgt_transformations)
+        
+    elif dataset == 'det':
+        dataset_train = datasets.VOCDetection(root, year=year, image_set="train", download=download,
+                           transform=transformations, target_transform=trgt_transformations)
+        dataset_test = datasets.VOCDetection(root, year=year, image_set="val", download=download,
+                           transform=transformations, target_transform=trgt_transformations)
+
     train_loader = torch.utils.data.DataLoader(
         dataset_train,
         batch_size=batch_size,
@@ -49,6 +61,41 @@ def get_voc_data(dataset='seg', test_batch_size=1):
         shuffle=shuffle, **kwargs)   
     
     return train_loader, test_loader
+
+
+def get_cityscape_data(dataset='seg', test_batch_size=1, year='2008'):
+    batch_size = 64
+    shuffle = False
+    kwargs =  {}
+    
+    transformations = transforms.Compose([
+    transforms.ToTensor(),
+    ])
+    
+    trgt_transformations = transforms.Compose([
+    transforms.ToTensor(),
+    ])
+    
+    dataset_train = datasets.Cityscapes('../data', split='train', mode='fine',
+                     target_type='semantic', transform=transformations, target_transform=trgt_transformations)
+    dataset_test = datasets.Cityscapes('../data', split='val', mode='fine',
+                     target_type='semantic', transform=transformations, target_transform=trgt_transformations)
+    
+    train_loader = torch.utils.data.DataLoader(
+        dataset_train,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=4,
+        **kwargs) 
+    
+    test_loader = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=test_batch_size,
+        num_workers=4,
+        shuffle=shuffle, **kwargs)   
+    
+    return train_loader, test_loader
+
 
 
 def get_coco_data():
