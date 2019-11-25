@@ -88,21 +88,21 @@ def main():
                                                shuffle=True, 
                                                **kwargs, 
                                                collate_fn=pad_collate)
-    print('Data is ready')
-    #model = CNN().to(device)
-    
-    #train_loader, test_loader = get_voc_data()
+
+   
     
     if task == 'segmentation':
-        model = get_cnn_seg().to(device)
+        model = get_cnn_seg()
         
     elif task == 'segmentation2':
-        model = get_seg_model().to(device)
+        model = get_seg_model(pretrained=True)
         
     else:
-        model = CNN().to(device)
+        model = CNN()
         
-    # model = nn.DataParallel(model)
+        
+    if torch.cuda.device_count() > 1:        
+        model = nn.DataParallel(model)
         
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     
