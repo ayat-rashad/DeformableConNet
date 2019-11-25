@@ -17,14 +17,21 @@ def show(image, outfile=None):
         img = image.permute(1,2,0)
     else:
         img = image
-        
+    
+    #img = img[0, :, :]
+    
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.axis('off')
     ax.imshow(img)
     
     if outfile != None: 
-        ax.savefig(outfile)
+        if(outfile[-3:].lower() not in ['jpg', 'png', 'svg']):
+            raise ValueError('image format {} is not recognizeable'.format(outfile[-3:]))
+        else:
+            fig.set_size_inches(18.5, 10.5)
+            fig.set_dpi(300)
+            plt.savefig(outfile, format=outfile[-3:], bbox_inches='tight', pad_inches = 0)
         
     return ax
 
@@ -43,7 +50,7 @@ def showBbox(image, label, outfile=None, class_names=None):
     '''
     if isinstance(label, torch.Tensor):
         label = label.numpy()[0, :, :]
-        
+    
     bboxes = label[:, :4]
     class_ids = label[:, 4:5]
     
@@ -77,14 +84,19 @@ def showBbox(image, label, outfile=None, class_names=None):
         ax.text(xmin, ymin, 
                 s='{:s} {:s}'.format(class_name, score), 
                 color='black',
-                fontsize=11,
+                fontsize=14,
                 verticalalignment='top', 
                 bbox={'color': colors[class_id], 'pad': 0, 'alpha':0.5})
     
     if outfile != None: 
-        ax.savefig(outfile)
+        if(outfile[-3:].lower() not in ['jpg', 'png', 'svg']):
+            raise ValueError('image format {} is not recognizeable'.format(outfile[-3:]))
+        else:
+            fig.set_size_inches(18.5, 10.5)
+            fig.set_dpi(300)
+            plt.savefig(outfile, format=outfile[-3:], bbox_inches='tight', pad_inches = 0)
         
-    return ax 
+    return ax   
 
 def show_image_batch(img_list, outfile = None):
     num = len(img_list)
