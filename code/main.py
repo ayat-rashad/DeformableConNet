@@ -104,13 +104,24 @@ def main():
     if torch.cuda.device_count() > 1:        
         model = nn.DataParallel(model)
         
-    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+        
+    feature_extract = True
+    params_to_update = None
+
+    if feature_extract:
+        params_to_update = []
+        for name,param in model.named_parameters():
+            if param.requires_grad == True:
+                params_to_update.append(param)
+                print("\t",name)
+        
+    optimizer = optim.SGD(params_to_update, lr=args.lr, momentum=args.momentum)
     
     # Start training
     print('Start eval')
     for epoch in range(1, args.epochs + 1):
         # uncomment this and set pretrained to False for training
-        #train(args, model, device, train_loader, optimizer, epoch)
+        train(args, model, device, train_loader, optimizer, epoch)
         confmat = test(args, model, device, val_loader)
         print(confmat)
 
