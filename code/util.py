@@ -52,12 +52,14 @@ def get_voc_data(dataset='seg', batch_size = 64, test_batch_size=1, year='2008',
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=4,
+        drop_last=True,
         **kwargs)
     
     test_loader = torch.utils.data.DataLoader(
         dataset_test,
         batch_size=test_batch_size,
         num_workers=4,
+        drop_last=True,
         shuffle=shuffle, **kwargs)   
     
     return train_loader, test_loader
