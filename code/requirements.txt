@@ -4,12 +4,15 @@ backports.functools-lru-cache==1.5
 backports.shutil-get-terminal-size==1.0.0
 bleach==3.1.0
 certifi==2019.9.11
+cffi==1.13.2
 chardet==3.0.4
 configparser==4.0.2
 contextlib2==0.6.0.post1
 cycler==0.10.0
 Cython==0.29.13
+dcn==0.0.0
 decorator==4.4.0
+deform-conv==0.0.0
 defusedxml==0.6.0
 easydict==1.9
 entrypoints==0.3
@@ -41,6 +44,7 @@ nbformat==4.4.0
 notebook==5.7.8
 numpy==1.16.5
 opencv-python==4.1.1.26
+pandas==0.24.2
 pandocfilters==1.4.2
 pathlib2==2.3.5
 pexpect==4.7.0
@@ -50,6 +54,8 @@ pkg-resources==0.0.0
 prometheus-client==0.7.1
 prompt-toolkit==1.0.18
 ptyprocess==0.6.0
+pycocotools==2.0
+pycparser==2.19
 Pygments==2.4.2
 pyparsing==2.4.2
 pyrsistent==0.15.4
@@ -68,9 +74,10 @@ six==1.12.0
 subprocess32==3.5.4
 terminado==0.8.2
 testpath==0.4.2
-torch==1.3.0
-torchvision==0.4.1
+torch==1.1.0
+torchvision==0.3.0
 tornado==5.1.1
+tqdm==4.19.9
 traitlets==4.3.3
 urllib3==1.25.6
 wcwidth==0.1.7
