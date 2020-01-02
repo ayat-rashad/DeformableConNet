@@ -84,7 +84,7 @@ def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True, replace_l
         
         if replace_layers == 'dconv':
             conv_op = def_conv.DeformConvPack(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
-                                      dilation=(36, 36), bias=False)
+                                      dilation=(36, 36), bias=False, im2col_step=1)
         else:
             conv_op = nn.Conv2d(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
                                       dilation=(36, 36), bias=False)
