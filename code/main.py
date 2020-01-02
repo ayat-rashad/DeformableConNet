@@ -4,7 +4,7 @@ import os
 
 #from cnn import *
 from seg import *
-from util import *
+import util
 
 import numpy as np
 import torch
@@ -64,42 +64,21 @@ def main():
     transform = transforms.Compose([transforms.ToTensor()])
     target_transform = transforms.Compose([transforms.ToTensor()])
     
-    train_data, val_data = load_dataset('voc2007', 
-                                        transform=transform, 
-                                        target_transform=target_transform, 
-                                        type='detection')
-    #train_data, val_data = load_dataset('voc2012', transform=transform, type='detection')
-    #train_data, val_data = load_dataset('coco', transform=transform, type='detection')
+ 
 
     # For Segmentation
-    #train_data, val_data = load_dataset('voc2007', transform=transform, type='segmentation')
-    
-    # Example to output example image
-    #img, label = train_data[0]
-    #showBbox(img, label, outfile='/home/pml_09/output/example_001.png', class_names=train_data.classes)
+    train_loader, test_loader = util.get_voc_data(batch_size=10, test_batch_size=1, year='2008',
+                                              root='../data', download=False)
 
-    train_loader = torch.utils.data.DataLoader(train_data, 
-                                               batch_size=args.batch_size, 
-                                               shuffle=True, 
-                                               **kwargs, 
-                                               collate_fn=pad_collate)
-    val_loader = torch.utils.data.DataLoader(val_data, 
-                                               batch_size=args.batch_size, 
-                                               shuffle=True, 
-                                               **kwargs, 
-                                               collate_fn=pad_collate)
 
-   
-    
     if task == 'segmentation':
-        model = get_cnn_seg()
+        model = get_cnn_seg().to(device)
         
     elif task == 'segmentation2':
-        model = get_seg_model(pretrained=True)
+        model = get_seg_model(replace_layers='dconv').to(device)
         
     else:
-        model = CNN()
-        
+        model = CNN().to(device)
         
     if torch.cuda.device_count() > 1:        
         model = nn.DataParallel(model)
@@ -113,16 +92,17 @@ def main():
         for name,param in model.named_parameters():
             if param.requires_grad == True:
                 params_to_update.append(param)
-                print("\t",name)
         
     optimizer = optim.SGD(params_to_update, lr=args.lr, momentum=args.momentum)
     
     # Start training
-    print('Start eval')
     for epoch in range(1, args.epochs + 1):
         # uncomment this and set pretrained to False for training
         train(args, model, device, train_loader, optimizer, epoch)
-        confmat = test(args, model, device, val_loader)
+        print "Finished Training"
+        
+        confmat = test(args, model, device, test_loader)
+        print "Testing Results"
         print(confmat)
 
     if args.save_model:
