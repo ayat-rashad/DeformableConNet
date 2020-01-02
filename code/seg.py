@@ -10,6 +10,7 @@ from torchvision import datasets, transforms, models
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+import def_conv
 
 '''from coco_utils import get_coco, get_coco_kp
 
@@ -62,7 +63,7 @@ def get_cnn_seg(n_classes=21):
         return model
     
     
-def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True):        
+def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True, replace_layers='dconv', use_cuda=True):        
     # Get pretrained deeplab model 
     if model_name == 'deeplab':
         model = models.segmentation.deeplabv3_resnet101(pretrained=pretrained)
@@ -71,12 +72,35 @@ def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True):
     #for param in model.parameters():
     #    param.requires_grad = False
     
+    
+    if replace_layers is not None:
+        set_parameter_requires_grad(model, True)
+        deformable_groups = 1
+        kW = KH = 3
+        inC = 2048
+
+
+        layer = model.classifier[0].convs[3]
+        
+        if replace_layers == 'dconv':
+            conv_op = def_conv.DeformConvPack(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
+                                      dilation=(36, 36), bias=False)
+        else:
+            conv_op = nn.Conv2d(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
+                                      dilation=(36, 36), bias=False)
+        if use_cuda:
+            conv_op = conv_op.cuda()
+
+        layer[0] = conv_op
+        set_parameter_requires_grad(layer, False)
+        model.classifier[0].convs[3] = layer
+    
     return model
             
 
 def criterion(inputs, target, reduction='sum'):
     losses = {}
-    target = target.squeeze(axis=1).long()
+    target = target.squeeze(1).long()
     for name, x in inputs.items():
         losses[name] = nn.functional.cross_entropy(x, target, ignore_index=-1, reduction=reduction)
 
@@ -141,3 +165,11 @@ def test(args, model, device, test_loader, crt='cent'):
     return confmat
     
     
+    
+def set_parameter_requires_grad(model, feature_extracting):
+    for param in model.parameters():
+        if feature_extracting:
+            param.requires_grad = False
+        else:
+            param.requires_grad = True
+ 
