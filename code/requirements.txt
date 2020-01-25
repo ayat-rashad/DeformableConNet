@@ -12,7 +12,7 @@ cycler==0.10.0
 Cython==0.29.13
 #dcn==0.0.0
 decorator==4.4.0
-deform-conv==0.0.0
+#deform-conv==0.0.0
 defusedxml==0.6.0
 easydict==1.9
 entrypoints==0.3

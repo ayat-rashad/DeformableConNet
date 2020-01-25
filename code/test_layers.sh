@@ -1,5 +1,5 @@
 # setup (python2) environment
-pip install -r requirements.txt
+pip2 install -r requirements.txt
 
 # setup deformable convolution operator
 cd deform_conv
