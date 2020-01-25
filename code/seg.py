@@ -12,12 +12,6 @@ import torch.nn.functional as F
 
 import def_conv
 
-'''from coco_utils import get_coco, get_coco_kp
-
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from engine import train_one_epoch, evaluate
-'''
-
 from util import *
 
 
@@ -63,45 +57,63 @@ def get_cnn_seg(n_classes=21):
         return model
     
     
-def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True, replace_layers='dconv', use_cuda=True):        
+def get_seg_model(n_classes=21, model_name='deeplab', pretrained=True, replace_layers='dconv', n_layers=1, use_cuda=True):     
     # Get pretrained deeplab model 
     if model_name == 'deeplab':
         model = models.segmentation.deeplabv3_resnet101(pretrained=pretrained)
-
-    # Turn off training for their parameters
-    #for param in model.parameters():
-    #    param.requires_grad = False
-    
     
     if replace_layers is not None:
         set_parameter_requires_grad(model, True)
         deformable_groups = 1
-        kW = KH = 3
-        inC = 2048
+        #kW = KH = 3
+        #inC = 2048
 
-
-        layer = model.classifier[0].convs[3]
+        layers_to_replace = [
+            model.classifier[0].convs[3],
+            model.classifier[0].convs[2],
+            model.classifier[0].convs[1],
+            model.backbone.layer4[0],
+            model.backbone.layer4[1],
+            model.backbone.layer4[2] 
+        ]
         
-        if replace_layers == 'dconv':
-            conv_op = def_conv.DeformConvPack(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
-                                      dilation=(36, 36), bias=False, im2col_step=1)
-        else:
-            conv_op = nn.Conv2d(2048, 256, kernel_size=(3, 3), stride=(1, 1), padding=(36, 36),
-                                      dilation=(36, 36), bias=False)
-        if use_cuda:
-            conv_op = conv_op.cuda()
-
-        layer[0] = conv_op
-        set_parameter_requires_grad(layer, False)
-        model.classifier[0].convs[3] = layer
+        conv_op = None
+        
+        for i in range(n_layers):
+            c = layers_to_replace[i][0]
+            l_inC = c.in_channels
+            l_oC = c.out_channels
+            l_k = c.kernel_size
+            l_stride = c.stride
+            l_padding = c.padding
+            l_dilation = c.dilation
+            l_bias = c.bias
+            
+            if replace_layers == 'dconv':
+                conv_op = def_conv.DeformConvPack(in_channels=l_inC, out_channels=l_oC, kernel_size=l_k,
+                                                  stride=l_stride, padding=1,
+                                      dilation=1, bias=l_bias, im2col_step=1)
+            else:
+                conv_op = nn.Conv2d(in_channels=l_inC, out_channels=l_oC, kernel_size=l_k,
+                                                  stride=l_stride, padding=l_padding,
+                                      dilation=l_dilation, bias=l_bias)
+               
+            if use_cuda:
+                conv_op = conv_op.cuda()
+                
+            layers_to_replace[i][0] = conv_op
+            set_parameter_requires_grad(model.classifier, False)
+            #model.classifier[0].convs[3] = layer
     
     return model
             
 
-def criterion(inputs, target, reduction='sum'):
+def criterion(inputs, target, reduction='mean'):
     losses = {}
     target = target.squeeze(1).long()
+    
     for name, x in inputs.items():
+        x = nn.functional.softmax(x,1)
         losses[name] = nn.functional.cross_entropy(x, target, ignore_index=-1, reduction=reduction)
 
     if len(losses) == 1:
@@ -111,8 +123,7 @@ def criterion(inputs, target, reduction='sum'):
 
                 
         
-def train(args, model, device, train_loader, optimizer, epoch, phase='train', crt=
-         'cent'):
+def train(args, model, device, train_loader, optimizer, epoch, phase='train', crt='cent'):
     model.train()
     
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -120,12 +131,8 @@ def train(args, model, device, train_loader, optimizer, epoch, phase='train', cr
         target = target
         optimizer.zero_grad()
         output = model(data)
-        
-        #loss = F.nll_loss(output, target)
-        #if crt == 'cent':
-        #    criterion = nn.CrossEntropyLoss()
-        loss = criterion(output, target)
-        
+                
+        loss = criterion(output, target)        
         loss.backward()
         optimizer.step()
         

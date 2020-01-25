@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 import argparse
 import os
 
@@ -42,6 +42,8 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
+    parser.add_argument('--layers', type=int, default=0, metavar='L',
+                        help='How many deformable layers')
 
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
@@ -52,30 +54,58 @@ def main():
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
-    
-    #kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     kwargs =  {}
     
-    ''' 
-        Get the data
-        Replace with load_dataset function
-    '''
-    
-    transform = transforms.Compose([transforms.ToTensor()])
-    target_transform = transforms.Compose([transforms.ToTensor()])
-    
- 
 
-    # For Segmentation
-    train_loader, test_loader = util.get_voc_data(batch_size=10, test_batch_size=1, year='2008',
-                                              root='../data', download=False)
+    # Get Data For Segmentation
+    #train_loader, test_loader = util.get_voc_data(batch_size=10, test_batch_size=1, year='2008',
+    #                                          root='../data', download=False)
+    
+    transformations = transforms.Compose([
+    transforms.Resize(255),
+    transforms.CenterCrop(224),
+    transforms.ToTensor()
+    #    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    #)
+    ])
+    
+    def proc_img(img):
+        arr = np.array(img)
+        arr.dtype = np.int8
+        return arr
+
+    trgt_transformations = transforms.Compose([
+    transforms.Resize(255),
+    transforms.CenterCrop(224),
+    transforms.Lambda(proc_img),
+    transforms.ToTensor()
+    ])
+
+    train_data,test_data = load_dataset('voc2012', type='segmentation', transform=transformations,
+                                      target_transform=trgt_transformations)
+
+    train_loader = torch.utils.data.DataLoader(
+            train_data,
+            batch_size=10,
+            #sampler=torch.utils.data.sampler.RandomSampler(tr),
+            num_workers=4,
+            drop_last=True
+            )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_data,
+        batch_size=1,
+        num_workers=4,
+        drop_last=True,
+        shuffle=False
+    )   
 
 
     if task == 'segmentation':
         model = get_cnn_seg().to(device)
         
     elif task == 'segmentation2':
-        model = get_seg_model(replace_layers='dconv').to(device)
+        model = get_seg_model(replace_layers='dconv', n_layers=args.layers).to(device)
         
     else:
         model = CNN().to(device)
@@ -83,7 +113,7 @@ def main():
     if torch.cuda.device_count() > 1:        
         model = nn.DataParallel(model)
         
-        
+    # Get the parameters to optimize
     feature_extract = True
     params_to_update = None
 
@@ -95,6 +125,7 @@ def main():
         
     optimizer = optim.SGD(params_to_update, lr=args.lr, momentum=args.momentum)
     
+    print "Starting Training for Deformable Convolutional Layers:", args.layers
     # Start training
     for epoch in range(1, args.epochs + 1):
         # uncomment this and set pretrained to False for training
@@ -103,8 +134,9 @@ def main():
         
         confmat = test(args, model, device, test_loader)
         print "Testing Results"
-        print(confmat)
+        print(confmat) 
 
+        
     if args.save_model:
         model_name = "model.pt" 
         torch.save(model.state_dict(), model_name)
