@@ -10,7 +10,7 @@ configparser==4.0.2
 contextlib2==0.6.0.post1
 cycler==0.10.0
 Cython==0.29.13
-dcn==0.0.0
+#dcn==0.0.0
 decorator==4.4.0
 deform-conv==0.0.0
 defusedxml==0.6.0
